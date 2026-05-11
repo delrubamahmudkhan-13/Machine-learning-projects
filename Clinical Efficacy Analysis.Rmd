@@ -1,0 +1,70 @@
+---
+title: 'Clinical Efficacy Analysis: Sleep Dataset BZAN 6350'
+author: "Delruba"
+date: "`r Sys.Date()`"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# 1. Data Collection & Understanding
+data(sleep)
+str(sleep)
+summary(sleep)
+```
+
+```{r}
+# 2. Data Cleaning & Preparation
+sleep$group <- as.factor(sleep$group)
+sleep$ID <- as.factor(sleep$ID)
+```
+
+```{r}
+# 3. Exploratory Data Analysis (EDA)
+library(ggplot2)
+```
+```{r}
+# Boxplot comparing extra sleep by drug group
+ggplot(sleep, aes(x = group, y = extra, fill = group)) +
+  geom_boxplot(alpha = 0.7) +
+  geom_jitter(width = 0.2) +
+  labs(title = "Extra Sleep Hours by Drug Group",
+       x = "Drug Group", y = "Hours of Extra Sleep") +
+  theme_minimal()
+```
+
+```{r}
+# Line plot to show individual patient response
+ggplot(sleep, aes(x = group, y = extra, group = ID, color = ID)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Individual Patient Responses to Soporific Drugs",
+       x = "Drug Group", y = "Extra Sleep") +
+  theme_light()
+```
+```{r}
+ # 4. Data Modeling (Paired T-test)
+# Perform paired t-test
+
+group1 <- sleep$extra[sleep$group == 1]
+group2 <- sleep$extra[sleep$group == 2]
+
+# Perform the Paired T-test using the vectors
+t_test_result <- t.test(group1, group2, paired = TRUE)
+
+# Print results
+print(t_test_result)
+```
+
+```{r}
+# 5. Model Validation (Checking Normality of Differences)
+diffs <- sleep$extra[sleep$group == 2] - sleep$extra[sleep$group == 1]
+shapiro.test(diffs) # Shapiro-Wilk test for normality
+qqnorm(diffs); qqline(diffs)
+```
+
