@@ -1,0 +1,154 @@
+---
+title: "Project-Urban Food Delivery Analysis and Prediction BZAN 6351"
+author: "Delruba"
+date: "`r Sys.Date()`"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#Load Libraries
+library(tidyverse)
+library(ggplot2)
+library(caret)
+library(dplyr)
+```
+
+```{r}
+#Load dataset
+data <- read.csv("C:/Users/delru/Downloads/Food_Delivery_Times.csv")
+
+## Quick check
+head(data)
+str(data)
+summary(data)
+```
+
+```{r}
+#Data Cleaning
+colSums(is.na(data))
+data <- na.omit(data)
+#Remove dulicate
+data <- distinct(data)
+#Ensure Correct data type
+data$Weather <- as.factor(data$Weather)
+data$Traffic_Level <- as.factor(data$Traffic_Level)
+data$Time_of_Day <- as.factor(data$Time_of_Day)
+data$Vehicle_Type <- as.factor(data$Vehicle_Type)
+```
+
+```{r}
+#Exploratory Data Analysis
+#Delivery Time Distribution
+ggplot(data, aes(x = Delivery_Time_min)) +
+  geom_histogram(binwidth = 5, fill = "blue", color = "White") +
+  ggtitle("Distribution of Delivery Time")
+```
+
+```{r}
+#Distance vs Delivery Time
+ggplot(data, aes(x = Distance_km, y = Delivery_Time_min)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", color = "red") +
+  ggtitle("Distance vs Delivery Time")
+```
+
+```{r}
+#Traffic Impact 
+ggplot(data, aes(x = Traffic_Level, y = Delivery_Time_min)) +
+  geom_boxplot(fill = "orange") +
+  ggtitle("Traffic Level vs Delivery Time")
+```
+
+```{r}
+#Weather Impact
+ggplot(data, aes(x = Weather, y = Delivery_Time_min)) +
+  geom_boxplot(fill = "skyblue") +
+  ggtitle("Weather vs Delivery Time")
+```
+
+```{r}
+# Correlation Heatmap for Numerical Variables
+library(ggcorrplot)
+numerical_data <- data %>% select(Delivery_Time_min, Distance_km, Preparation_Time_min, Courier_Experience_yrs)
+corr_matrix <- cor(numerical_data)
+ggcorrplot(corr_matrix, lab = TRUE, title = "Correlation Heatmap")
+```
+
+```{r}
+#Feature Selection
+model_data <- data %>%
+  select(Delivery_Time_min,
+         Distance_km,
+         Traffic_Level,
+         Weather,
+         Courier_Experience_yrs,
+         Preparation_Time_min)
+```
+
+```{r}
+#Train-Test Split
+set.seed(123)
+
+train_index <- createDataPartition(model_data$Delivery_Time_min, p = 0.8, list = FALSE)
+
+train_data <- model_data[train_index, ]
+test_data  <- model_data[-train_index, ]
+```
+
+```{r}
+#Model Building (Linear Regression)
+model <- lm(Delivery_Time_min ~ ., data = train_data)
+
+summary(model)
+```
+
+```{r}
+#Predictions
+predictions <- predict(model, test_data)
+```
+
+
+```{r}
+#Model Evaluation
+rmse <- sqrt(mean((test_data$Delivery_Time_min - predictions)^2))
+print(paste("RMSE:", round(rmse, 2)))
+rmse <- sqrt(mean((test_data$Delivery_Time_min - predictions)^2))
+rmse
+```
+```{r}
+summary(model)$r.squared
+```
+```{r}
+#Feature Importance
+importance <- varImp(model)
+plot(importance)
+importance <- varImp(model)
+print(importance)
+plot(importance, main = "Variable Importance in Delivery Prediction")
+```
+
+```{r}
+#Actual vs Predicted Plot
+results <- data.frame(
+  Actual = test_data$Delivery_Time_min,
+  Predicted = predictions
+)
+
+ggplot(results, aes(x = Actual, y = Predicted)) +
+  geom_point(color = "blue") +
+  geom_abline(slope = 1, intercept = 0, color = "red") +
+  ggtitle("Actual vs Predicted Delivery Time")
+```
+
+```{r}
+#Business Insight Summary
+summary(data$Distance_km)
+summary(data$Delivery_Time_min)
+```
+
